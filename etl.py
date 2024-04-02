@@ -24,22 +24,27 @@ def transform_data(episodes_df, colors_df, guests_df):
     return transformed_episodes, transformed_colors, transformed_guests
 
 def load_data(episodes, colors, guests):
-    # Load data into the database
+    # Load episode data into the database
     for _, episode_data in episodes.iterrows():
         episode = Episode(title=episode_data['painting_title'])
         db.session.add(episode)
         db.session.commit()  # Commit the episode to get the generated ID
-        
-        for _, color_data in colors[colors['EPISODE'] == episode_data['painting_title']].iterrows():
-            color = Color(name=color_data['COLOR'], episode_id=episode.id)
-            db.session.add(color)
-    
+
+        # Load color data for the current episode
+        episode_colors = colors[colors['EPISODE'] == episode_data['painting_title']]
+        for _, color_data in episode_colors.iterrows():
+            color_names = color_data['COLOR'].split(', ')
+            for color_name in color_names:
+                color = Color(name=color_name, episode_id=episode.id)
+                db.session.add(color)
+
     # Load guest data
     # ...
-    
+
     db.session.commit()
 
 def run_etl():
     episodes_df, colors_df, guests_df = extract_data()
     transformed_episodes, transformed_colors, transformed_guests = transform_data(episodes_df, colors_df, guests_df)
     load_data(transformed_episodes, transformed_colors, transformed_guests)
+
